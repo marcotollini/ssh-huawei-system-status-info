@@ -1,0 +1,10 @@
+[
+    {
+        "mgmt_ip": "10.110.110.65",
+        "user": "",
+        "password": "",
+        "frequency": 1,
+        "output": "./status_10.110.110.65.json",
+        "append": false
+    }
+]
