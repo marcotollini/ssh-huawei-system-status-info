@@ -12,7 +12,7 @@ class Executor:
         self.user = router_config['user']
         self.password = router_config['password']
         self.frequency = router_config['frequency']
-        self.output = router_config['output']
+        self.output = router_config.get('output')
         self.should_print_console = should_print_console
         self.zmq = zmq
 
@@ -131,7 +131,9 @@ class Executor:
 
             cpu = self.run_cpu_command()
             memory = self.run_memory_command()
-            self.append_info(cpu, memory)
+
+            if self.output:
+                self.append_info(cpu, memory)
 
             if self.should_print_console:
                 self.print_console(cpu, memory)

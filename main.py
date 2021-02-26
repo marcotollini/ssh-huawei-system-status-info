@@ -61,16 +61,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    # text = '---\n' + text
-    # rows = text.split('\n')
-    # sections_indexes = [i for i in range(len(rows)) if '---' in rows[i]]
-    # sections = [rows[sections_indexes[si]+1 : sections_indexes[si+1]] for si in range(len(sections_indexes) - 1)]
-
-    # interesting_section = sections[3]
-    # print(interesting_section)
-    # splitting = [r.split(' ') for r in interesting_section]
-    # splitting_cleaned = [[y for y in x if y != ''] for x in splitting]
-    # # processes = [[' '.join(p[:-1]), int(p[-1][:-1])] for p in splitting_cleaned]
-    # processes = [[p[0], ' '.join(p[1:-1]), int(p[-1])] for p in splitting_cleaned]
-    # print(processes)
