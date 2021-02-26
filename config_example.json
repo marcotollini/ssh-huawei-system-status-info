@@ -4,7 +4,6 @@
         "user": "",
         "password": "",
         "frequency": 1,
-        "output": "./status_10.110.110.65.json",
-        "append": false
+        "output": "./status_10.110.110.65.json"
     }
 ]
