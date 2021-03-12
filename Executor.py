@@ -7,12 +7,12 @@ import zmq
 
 
 class Executor:
-    def __init__(self, router_config, should_print_console, zmq):
+    def __init__(self, router_config, should_print_console, zmq, output_path):
         self.ip = router_config['mgmt_ip']
         self.user = router_config['user']
         self.password = router_config['password']
         self.frequency = router_config['frequency']
-        self.output = router_config.get('output')
+        self.output = output_path
         self.should_print_console = should_print_console
         self.zmq = zmq
 
@@ -32,12 +32,34 @@ class Executor:
 
         self.channel = self.ssh.invoke_shell()
 
+    def send_debug_command(self, iteration_ts):
+        if not self.ip == '10.215.184.52':
+            return
+
+        self.send_command('sys\n')
+        self.send_command('diagnose\n')
+        mem_info = self.send_command('disp bmp cid 806C04E1 6 | no-more\n')
+        stats_info = self.send_command('disp bgp BGP_RM_IPV4 congest statistics | no-more\n')
+        self.send_command('return\n')
+
+        print('------')
+        print(f'{iteration_ts} | {self.ip}')
+        print('======')
+        print(f'{mem_info}')
+        print('******')
+        print(f'{stats_info}')
+        print('######')
+
     def send_command(self, command):
         buffer = ''
         self.channel.send(command)
 
-        while '<' not in buffer:
+        while '<' not in buffer and not ('[' in buffer and ']' in buffer):
             buffer += self.channel.recv(10000).decode("utf-8")
+            # print('------', command)
+            # print(buffer)
+            # print('#######', '[' in buffer,'<' in buffer, ']' in buffer)
+
         return buffer
 
     def connect_zqm(self):
@@ -89,32 +111,34 @@ class Executor:
         self.logger.debug('memory parsed correctly')
         return programs
 
-    def append_info(self, cpu, memory):
+    def append_info(self, cpu, memory, timestamp):
         self.logger.debug('Sending to file')
         value = {
             'ip': self.ip,
             'freq': self.frequency,
             'cpu': cpu,
-            'memory': memory
+            'memory': memory,
+            'timestamp': timestamp
         }
         with open(self.output, 'a+') as fp:
             fp.write(json.dumps(value))
             fp.write('\n')
 
-    def print_console(self, cpu, memory):
+    def print_console(self, cpu, memory, timestamp):
         self.logger.debug('Sending to console')
         cpu_arr = [f'{x[0]}: {x[1]}' for x in cpu]
         memory_arr = [f'({x[0]}) {x[1]}: {x[2]}' for x in memory]
-        self.logger.info(f'ip: {self.ip} - freq: {self.frequency} - cpu: {", ".join(cpu_arr)} - memory: {", ".join(memory_arr)}')
+        self.logger.info(f'ip: {self.ip} - timestamp: {timestamp} - freq: {self.frequency} - cpu: {", ".join(cpu_arr)} - memory: {", ".join(memory_arr)}')
 
-    def send_zmq(self, cpu, memory):
+    def send_zmq(self, cpu, memory, timestamp):
         self.logger.debug('Sending to ZMQ')
 
         value = {
             'ip': self.ip,
             'freq': self.frequency,
             'cpu': cpu,
-            'memory': memory
+            'memory': memory,
+            'timestamp': timestamp
         }
         self.zmq_socket.send_pyobj(value)
 
@@ -127,19 +151,22 @@ class Executor:
         self.channel.recv(10000)
 
         while not self.should_stop:
+            print('starting iteration')
             start_iteration = time()
+
+            # self.send_debug_command(start_iteration)
 
             cpu = self.run_cpu_command()
             memory = self.run_memory_command()
 
             if self.output:
-                self.append_info(cpu, memory)
+                self.append_info(cpu, memory, start_iteration)
 
             if self.should_print_console:
-                self.print_console(cpu, memory)
+                self.print_console(cpu, memory, start_iteration)
 
             if self.zmq:
-                self.send_zmq(cpu, memory)
+                self.send_zmq(cpu, memory, start_iteration)
 
 
             end_iteration = time()

@@ -30,6 +30,9 @@ def main():
     parser.add_argument('-c', '--config', dest='config_path', required=True,
                         help='Configuration file')
 
+    parser.add_argument('-o', '--output', dest='output_path', default=None,
+                        help='Output file path')
+
     parser.add_argument('-z', '--zmq', dest='zmq', required=False,
                         help='ZMQ Server and port as tcp://localhost:4567')
 
@@ -48,7 +51,7 @@ def main():
     executors = []
     threads = []
     for router in config:
-        executor = Executor(router, args.console, args.zmq)
+        executor = Executor(router, args.console, args.zmq, args.output_path)
         thread = threading.Thread(target=executor.start)
         executors.append(executor)
         threads.append(thread)
